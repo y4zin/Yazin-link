@@ -19,6 +19,7 @@ export const users = mysqlTable("users", {
 
 export const imageLinks = mysqlTable("image_links", {
   id: int("id").autoincrement().primaryKey(),
+  ownerOpenId: varchar("ownerOpenId", { length: 64 }),
   publicId: varchar("publicId", { length: 32 }).notNull().unique(),
   storageKey: varchar("storageKey", { length: 512 }).notNull(),
   storageUrl: varchar("storageUrl", { length: 600 }).notNull(),

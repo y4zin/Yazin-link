@@ -32,6 +32,10 @@
   .brand-word { font-family: var(--font-display); letter-spacing: -0.075em; }
   .brand-word b { font-weight: 800; }
   .brand-word i { color: #ffa8b7; font-style: normal; font-weight: 500; }
+  .brand-lockup { transition: transform 180ms cubic-bezier(.23,1,.32,1), opacity 180ms cubic-bezier(.23,1,.32,1); }
+  .brand-lockup:hover { transform: translateY(-1px); opacity: .86; }
+  .brand-mark { filter: drop-shadow(0 5px 13px rgba(255,255,255,.14)); }
+  .my-links-shortcut { border-bottom: 1px solid rgba(168,242,195,.35); padding-bottom: .25rem; }
   .eyebrow { font-family: var(--font-display); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; }
   .ribbon { position: absolute; right: -22vw; width: 132vw; height: 118px; border-radius: 999px 0 0 999px; opacity: .95; transform: rotate(-8deg); }
   .ribbon::after { content: ""; position: absolute; inset: 16px 0 16px 17%; border-radius: inherit; background: #121212; }
@@ -46,6 +50,7 @@
   .section-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(247,246,239,.32), transparent); }
   .step-card { transition: transform 180ms cubic-bezier(.23,1,.32,1), border-color 180ms cubic-bezier(.23,1,.32,1), background-color 180ms cubic-bezier(.23,1,.32,1); }
   .step-card:hover { transform: translateY(-3px); border-color: rgba(168,242,195,.5); background: rgba(255,255,255,.065); }
+  .faq-shell { background-image: linear-gradient(125deg, rgba(255,175,187,.08), transparent 28%, transparent 72%, rgba(168,242,195,.08)); }
 }
 
 @media (min-width: 640px) { .container { padding-inline: 2rem; } }

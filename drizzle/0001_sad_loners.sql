@@ -1,0 +1,1 @@
+ALTER TABLE `image_links` ADD `ownerOpenId` varchar(64);
