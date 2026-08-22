@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { captureImageContents } from "@/lib/imagePayload";
 import {
   ArrowRight,
   Check,
@@ -35,7 +36,17 @@ const MIME_ALIASES: Record<string, string> = {
 };
 const EXTENSION_MIMES: Record<string, string> = { avif: "image/avif", gif: "image/gif", heic: "image/heic", heif: "image/heif", jpeg: "image/jpeg", jpg: "image/jpeg", png: "image/png", webp: "image/webp" };
 
-type UploadFile = { file: File; mimeType: string; preview: string };
+type UploadStatus = "preparing" | "ready" | "error";
+
+type UploadFile = {
+  contentBase64?: string;
+  errorMessage?: string;
+  fileName: string;
+  mimeType: string;
+  preview: string;
+  size: number;
+  status: UploadStatus;
+};
 
 const features = [
   { icon: Sparkles, title: "Image enhancement", text: "Prepare visual assets for every channel with a polished, optimized delivery layer." },
@@ -64,44 +75,31 @@ function inferImageMimeType(file: File) {
   return EXTENSION_MIMES[extension];
 }
 
-async function fileToBase64(file: File) {
-  const buffer = await file.arrayBuffer();
-  if (buffer.byteLength === 0) throw new Error("The selected image is empty.");
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-  let binary = "";
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    const chunk = bytes.subarray(index, index + chunkSize);
-    for (let characterIndex = 0; characterIndex < chunk.length; characterIndex += 1) {
-      binary += String.fromCharCode(chunk[characterIndex]);
-    }
-  }
-  return btoa(binary);
-}
-
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<string | null>(null);
+  const selectionVersionRef = useRef(0);
   const [selected, setSelected] = useState<UploadFile | null>(null);
   const [dragging, setDragging] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const uploadImage = trpc.imageLink.upload.useMutation();
 
-  useEffect(() => {
-    return () => {
-      if (selected) URL.revokeObjectURL(selected.preview);
-    };
-  }, [selected]);
+  useEffect(() => () => {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+  }, []);
 
   const clearSelected = () => {
-    if (selected) URL.revokeObjectURL(selected.preview);
+    selectionVersionRef.current += 1;
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    previewRef.current = null;
     setSelected(null);
     setShareUrl("");
     setCopied(false);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const acceptFile = (file?: File) => {
+  const acceptFile = async (file?: File) => {
     if (!file) return;
     const mimeType = inferImageMimeType(file);
     if (!mimeType) {
@@ -112,10 +110,34 @@ export default function Home() {
       toast.error("Image size must be 8 MB or smaller.");
       return;
     }
-    if (selected) URL.revokeObjectURL(selected.preview);
-    setSelected({ file, mimeType, preview: URL.createObjectURL(file) });
+
+    selectionVersionRef.current += 1;
+    const selectionVersion = selectionVersionRef.current;
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+
+    const preview = URL.createObjectURL(file);
+    previewRef.current = preview;
+    const baseSelection = {
+      fileName: file.name,
+      mimeType,
+      preview,
+      size: file.size,
+    };
+
+    setSelected({ ...baseSelection, status: "preparing" });
     setShareUrl("");
     setCopied(false);
+
+    try {
+      const contentBase64 = await captureImageContents(file);
+      if (selectionVersion !== selectionVersionRef.current) return;
+      setSelected({ ...baseSelection, contentBase64, status: "ready" });
+    } catch (error) {
+      if (selectionVersion !== selectionVersionRef.current) return;
+      const errorMessage = error instanceof Error ? error.message : "The phone could not prepare this image.";
+      setSelected({ ...baseSelection, errorMessage, status: "error" });
+      toast.error("The image could not be prepared. Choose it again before creating a link.");
+    }
   };
 
   const onInputChange = (event: ChangeEvent<HTMLInputElement>) => acceptFile(event.target.files?.[0]);
@@ -132,13 +154,15 @@ export default function Home() {
   };
 
   const generateLink = async () => {
-    if (!selected) return;
+    if (!selected || selected.status !== "ready" || !selected.contentBase64) {
+      toast.error("Wait until the image is prepared, or choose it again.");
+      return;
+    }
     try {
-      const contentBase64 = await fileToBase64(selected.file);
       const result = await uploadImage.mutateAsync({
-        fileName: selected.file.name,
+        fileName: selected.fileName,
         mimeType: selected.mimeType,
-        contentBase64,
+        contentBase64: selected.contentBase64,
       });
       setShareUrl(result.publicUrl);
       toast.success("Your image link is ready to share.");
@@ -207,9 +231,9 @@ export default function Home() {
                     <div className="relative mx-auto aspect-[4/3] w-full max-w-[190px] overflow-hidden rounded-xl border border-white/20 bg-[#173a63] shadow-lg"><img src={selected.preview} alt="Selected preview" className="h-full w-full object-cover" /><button className="absolute right-2 top-2 rounded-full bg-[#061d30]/75 p-1.5 text-white backdrop-blur transition hover:bg-[#061d30]" aria-label="Remove selected image" onClick={clearSelected}><X className="h-4 w-4" /></button></div>
                     <div className="min-w-0 text-center sm:text-left">
                       <p className="eyebrow text-[#97f65e]">Selected image</p>
-                      <h2 className="display-font mt-2 truncate text-2xl font-semibold text-white">{selected.file.name}</h2>
-                      <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-[#d2e3f5] sm:justify-start"><span>{fileSize(selected.file.size)}</span><span className="uppercase">{selected.mimeType.replace("image/", "")}</span></div>
-                      {!shareUrl ? <><Button disabled={uploadImage.isPending} onClick={generateLink} className="mt-6 rounded-full bg-[#97f65e] px-6 font-bold text-[#13331e] hover:bg-[#acf87c]">{uploadImage.isPending ? "Creating secure link…" : <><Link2 className="mr-2 h-4 w-4" />Create image link</>}</Button><button onClick={clearSelected} className="ml-3 mt-6 text-sm font-semibold text-[#d7e8fa] underline-offset-4 hover:text-white hover:underline">Choose another</button></> : <div className="mt-5 rounded-xl border border-[#97f65e]/40 bg-[#0e3558]/65 p-4 text-left"><div className="flex items-center gap-2 text-sm font-bold text-[#b6fa8a]"><Check className="h-4 w-4" /> Your shareable link is ready</div><div className="mt-3 flex gap-2"><input readOnly aria-label="Shareable image link" value={shareUrl} className="min-w-0 flex-1 rounded-lg border border-white/15 bg-[#062741] px-3 py-2 text-xs text-[#e6f2ff] outline-none" /><button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#97f65e] px-3 text-xs font-extrabold text-[#13331e] hover:bg-[#b3fb83]">{copied ? <><Check className="h-3.5 w-3.5" />COPIED</> : <><Copy className="h-3.5 w-3.5" />COPY</>}</button></div><div className="mt-3 flex items-center justify-between"><a href={shareUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#8eeef2] hover:text-white">Open image <ArrowRight className="ml-1 inline h-3 w-3" /></a><button onClick={clearSelected} className="inline-flex items-center gap-1 text-xs font-semibold text-[#d7e8fa] hover:text-white"><RotateCcw className="h-3 w-3" /> New image</button></div></div>}
+                      <h2 className="display-font mt-2 truncate text-2xl font-semibold text-white">{selected.fileName}</h2>
+                      <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-[#d2e3f5] sm:justify-start"><span>{fileSize(selected.size)}</span><span className="uppercase">{selected.mimeType.replace("image/", "")}</span></div>
+                      {!shareUrl ? <><Button disabled={uploadImage.isPending || selected.status !== "ready"} onClick={generateLink} className="mt-6 rounded-full bg-[#97f65e] px-6 font-bold text-[#13331e] hover:bg-[#acf87c] disabled:opacity-60">{selected.status === "preparing" ? "Preparing image…" : uploadImage.isPending ? "Creating secure link…" : <><Link2 className="mr-2 h-4 w-4" />Create image link</>}</Button>{selected.status === "error" && <p className="mt-3 max-w-sm text-sm leading-5 text-[#ffe1b3]">This image reference expired before it was secured. Choose the image again, then create its link.</p>}<button onClick={clearSelected} className="ml-3 mt-6 text-sm font-semibold text-[#d7e8fa] underline-offset-4 hover:text-white hover:underline">Choose another</button></> : <div className="mt-5 rounded-xl border border-[#97f65e]/40 bg-[#0e3558]/65 p-4 text-left"><div className="flex items-center gap-2 text-sm font-bold text-[#b6fa8a]"><Check className="h-4 w-4" /> Your shareable link is ready</div><div className="mt-3 flex gap-2"><input readOnly aria-label="Shareable image link" value={shareUrl} className="min-w-0 flex-1 rounded-lg border border-white/15 bg-[#062741] px-3 py-2 text-xs text-[#e6f2ff] outline-none" /><button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#97f65e] px-3 text-xs font-extrabold text-[#13331e] hover:bg-[#b3fb83]">{copied ? <><Check className="h-3.5 w-3.5" />COPIED</> : <><Copy className="h-3.5 w-3.5" />COPY</>}</button></div><div className="mt-3 flex items-center justify-between"><a href={shareUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#8eeef2] hover:text-white">Open image <ArrowRight className="ml-1 inline h-3 w-3" /></a><button onClick={clearSelected} className="inline-flex items-center gap-1 text-xs font-semibold text-[#d7e8fa] hover:text-white"><RotateCcw className="h-3 w-3" /> New image</button></div></div>}
                     </div>
                   </div>
                 )}
