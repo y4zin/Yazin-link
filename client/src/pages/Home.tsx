@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { captureImageContents } from "@/lib/imagePayload";
+import { saveLocalLink } from "@/lib/localLinks";
 import { trpc } from "@/lib/trpc";
 import { Check, Copy, ImagePlus, LayoutList, Link2, RotateCcw, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
@@ -71,7 +72,7 @@ export default function Home() {
   const onDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); inputRef.current?.click(); } };
   const generateLink = async () => {
     if (!selected || selected.status !== "ready" || !selected.contentBase64) { toast.error("انتظر تجهيز الصورة أو اخترها مرة أخرى."); return; }
-    try { setProgress(78); const result = await uploadImage.mutateAsync({ fileName: selected.fileName, mimeType: selected.mimeType, contentBase64: selected.contentBase64 }); setProgress(100); setShareUrl(result.publicUrl); toast.success("رابط صورتك أصبح جاهزًا للمشاركة."); window.setTimeout(() => setProgress(null), 720); }
+    try { setProgress(78); const result = await uploadImage.mutateAsync({ fileName: selected.fileName, mimeType: selected.mimeType, contentBase64: selected.contentBase64 }); saveLocalLink({ ...result, createdAt: new Date().toISOString() }); setProgress(100); setShareUrl(result.publicUrl); toast.success("رابط صورتك أصبح جاهزًا للمشاركة."); window.setTimeout(() => setProgress(null), 720); }
     catch (error) { setProgress(null); toast.error(error instanceof Error ? error.message : "تعذر إنشاء الرابط. حاول مرة أخرى."); }
   };
   const copyLink = async () => { if (!shareUrl) return; try { await navigator.clipboard.writeText(shareUrl); setCopied(true); toast.success("تم نسخ الرابط."); window.setTimeout(() => setCopied(false), 1600); } catch { toast.error("لم يتم النسخ تلقائيًا؛ انسخ الرابط يدويًا."); } };

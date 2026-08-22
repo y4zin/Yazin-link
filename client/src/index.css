@@ -37,11 +37,11 @@
   .brand-mark { filter: drop-shadow(0 5px 13px rgba(255,255,255,.14)); }
   .my-links-shortcut { border-bottom: 1px solid rgba(168,242,195,.35); padding-bottom: .25rem; }
   .eyebrow { font-family: var(--font-display); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; }
-  .ribbon { position: absolute; right: -22vw; width: 132vw; height: 118px; border-radius: 999px 0 0 999px; opacity: .95; transform: rotate(-8deg); }
+  .ribbon { position: absolute; right: -22vw; width: 132vw; height: 118px; border-radius: 999px 0 0 999px; opacity: .95; transform: rotate(-8deg); will-change: transform; }
   .ribbon::after { content: ""; position: absolute; inset: 16px 0 16px 17%; border-radius: inherit; background: #121212; }
-  .ribbon-white { top: 19.5rem; background: #f7f6ef; }
-  .ribbon-pink { top: 26rem; background: #ffa8b7; }
-  .ribbon-mint { top: 32.5rem; background: #a8f2c3; }
+  .ribbon-white { top: 28rem; background: #f7f6ef; }
+  .ribbon-pink { top: 35rem; background: #ffa8b7; }
+  .ribbon-mint { top: 42rem; background: #a8f2c3; }
   .yazin-panel { position: relative; overflow: hidden; }
   .yazin-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.06), transparent 28%, transparent 70%, rgba(168,242,195,.08)); }
   .upload-stage { border: 1px dashed rgba(247,246,239,.32); transition: border-color 180ms cubic-bezier(.23,1,.32,1), background-color 180ms cubic-bezier(.23,1,.32,1), transform 180ms cubic-bezier(.23,1,.32,1); }
@@ -55,5 +55,6 @@
 
 @media (min-width: 640px) { .container { padding-inline: 2rem; } }
 @media (min-width: 1024px) { .container { max-width: 1180px; } .ribbon { right: -15vw; width: 110vw; } }
-@media (max-width: 639px) { .ribbon { display: none; } }
-@media (prefers-reduced-motion: no-preference) { button:active { transform: scale(.975); } }
+@media (max-width: 639px) { .ribbon { right: -60vw; width: 165vw; height: 62px; opacity: .68; } .ribbon::after { inset: 9px 0 9px 15%; } .ribbon-white { top: 25rem; } .ribbon-pink { top: 29rem; } .ribbon-mint { top: 33rem; } }
+@media (prefers-reduced-motion: no-preference) { .ribbon { animation: ribbon-drift 16s cubic-bezier(.45,0,.55,1) infinite alternate; } .ribbon-pink { animation-delay: -5s; animation-duration: 19s; } .ribbon-mint { animation-delay: -9s; animation-duration: 22s; } button:active { transform: scale(.975); } }
+@keyframes ribbon-drift { 0% { transform: translate3d(-4vw,-6px,0) rotate(-8deg); } 50% { transform: translate3d(3vw,7px,0) rotate(-7deg); } 100% { transform: translate3d(-1vw,-4px,0) rotate(-9deg); } }
