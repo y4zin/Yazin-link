@@ -32,7 +32,7 @@ export const appRouter = router({
       const stored = await storagePut(
         `linkforge/images/${publicId}${image.extension}`,
         image.bytes,
-        input.mimeType,
+        image.contentType,
       );
 
       await createImageLink({
@@ -40,19 +40,19 @@ export const appRouter = router({
         storageKey: stored.key,
         storageUrl: stored.url,
         filename: image.filename,
-        contentType: input.mimeType,
+        contentType: image.contentType,
         bytes: image.bytes.length,
       });
 
       const host = ctx.req.get("host") ?? "localhost";
-      const publicUrl = new URL(stored.url, `${ctx.req.protocol}://${host}`).toString();
+      const publicUrl = new URL(`/i/${publicId}`, `${ctx.req.protocol}://${host}`).toString();
 
       return {
         publicId,
         publicUrl,
         filename: image.filename,
         bytes: image.bytes.length,
-        contentType: input.mimeType,
+        contentType: image.contentType,
       };
     }),
     get: publicProcedure.input(z.object({ publicId: z.string().min(6).max(32) })).query(async ({ input }) => {

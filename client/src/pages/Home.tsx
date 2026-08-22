@@ -25,9 +25,17 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type Key
 import { toast } from "sonner";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
-const ACCEPTED_TYPES = ["image/avif", "image/gif", "image/jpeg", "image/png", "image/webp"];
+const ACCEPTED_TYPES = ["image/avif", "image/gif", "image/heic", "image/heif", "image/jpeg", "image/png", "image/webp"];
+const MIME_ALIASES: Record<string, string> = {
+  "image/heic-sequence": "image/heic",
+  "image/heif-sequence": "image/heif",
+  "image/jpg": "image/jpeg",
+  "image/pjpeg": "image/jpeg",
+  "image/x-png": "image/png",
+};
+const EXTENSION_MIMES: Record<string, string> = { avif: "image/avif", gif: "image/gif", heic: "image/heic", heif: "image/heif", jpeg: "image/jpeg", jpg: "image/jpeg", png: "image/png", webp: "image/webp" };
 
-type UploadFile = { file: File; preview: string };
+type UploadFile = { file: File; mimeType: string; preview: string };
 
 const features = [
   { icon: Sparkles, title: "Image enhancement", text: "Prepare visual assets for every channel with a polished, optimized delivery layer." },
@@ -48,16 +56,27 @@ function fileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Could not read the selected image."));
-    reader.onload = () => {
-      const dataUrl = String(reader.result ?? "");
-      resolve(dataUrl.split(",")[1] ?? "");
-    };
-    reader.readAsDataURL(file);
-  });
+function inferImageMimeType(file: File) {
+  const reported = file.type.trim().toLowerCase();
+  const aliased = MIME_ALIASES[reported] ?? reported;
+  if (ACCEPTED_TYPES.includes(aliased)) return aliased;
+  const extension = file.name.trim().split(".").pop()?.toLowerCase() ?? "";
+  return EXTENSION_MIMES[extension];
+}
+
+async function fileToBase64(file: File) {
+  const buffer = await file.arrayBuffer();
+  if (buffer.byteLength === 0) throw new Error("The selected image is empty.");
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
+    for (let characterIndex = 0; characterIndex < chunk.length; characterIndex += 1) {
+      binary += String.fromCharCode(chunk[characterIndex]);
+    }
+  }
+  return btoa(binary);
 }
 
 export default function Home() {
@@ -84,8 +103,9 @@ export default function Home() {
 
   const acceptFile = (file?: File) => {
     if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      toast.error("Choose a PNG, JPG, WEBP, GIF, or AVIF image.");
+    const mimeType = inferImageMimeType(file);
+    if (!mimeType) {
+      toast.error("Choose a PNG, JPG, WEBP, GIF, AVIF, HEIC, or HEIF image.");
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
@@ -93,7 +113,7 @@ export default function Home() {
       return;
     }
     if (selected) URL.revokeObjectURL(selected.preview);
-    setSelected({ file, preview: URL.createObjectURL(file) });
+    setSelected({ file, mimeType, preview: URL.createObjectURL(file) });
     setShareUrl("");
     setCopied(false);
   };
@@ -117,7 +137,7 @@ export default function Home() {
       const contentBase64 = await fileToBase64(selected.file);
       const result = await uploadImage.mutateAsync({
         fileName: selected.file.name,
-        mimeType: selected.file.type,
+        mimeType: selected.mimeType,
         contentBase64,
       });
       setShareUrl(result.publicUrl);
@@ -188,12 +208,12 @@ export default function Home() {
                     <div className="min-w-0 text-center sm:text-left">
                       <p className="eyebrow text-[#97f65e]">Selected image</p>
                       <h2 className="display-font mt-2 truncate text-2xl font-semibold text-white">{selected.file.name}</h2>
-                      <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-[#d2e3f5] sm:justify-start"><span>{fileSize(selected.file.size)}</span><span className="uppercase">{selected.file.type.replace("image/", "")}</span></div>
+                      <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-[#d2e3f5] sm:justify-start"><span>{fileSize(selected.file.size)}</span><span className="uppercase">{selected.mimeType.replace("image/", "")}</span></div>
                       {!shareUrl ? <><Button disabled={uploadImage.isPending} onClick={generateLink} className="mt-6 rounded-full bg-[#97f65e] px-6 font-bold text-[#13331e] hover:bg-[#acf87c]">{uploadImage.isPending ? "Creating secure link…" : <><Link2 className="mr-2 h-4 w-4" />Create image link</>}</Button><button onClick={clearSelected} className="ml-3 mt-6 text-sm font-semibold text-[#d7e8fa] underline-offset-4 hover:text-white hover:underline">Choose another</button></> : <div className="mt-5 rounded-xl border border-[#97f65e]/40 bg-[#0e3558]/65 p-4 text-left"><div className="flex items-center gap-2 text-sm font-bold text-[#b6fa8a]"><Check className="h-4 w-4" /> Your shareable link is ready</div><div className="mt-3 flex gap-2"><input readOnly aria-label="Shareable image link" value={shareUrl} className="min-w-0 flex-1 rounded-lg border border-white/15 bg-[#062741] px-3 py-2 text-xs text-[#e6f2ff] outline-none" /><button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#97f65e] px-3 text-xs font-extrabold text-[#13331e] hover:bg-[#b3fb83]">{copied ? <><Check className="h-3.5 w-3.5" />COPIED</> : <><Copy className="h-3.5 w-3.5" />COPY</>}</button></div><div className="mt-3 flex items-center justify-between"><a href={shareUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#8eeef2] hover:text-white">Open image <ArrowRight className="ml-1 inline h-3 w-3" /></a><button onClick={clearSelected} className="inline-flex items-center gap-1 text-xs font-semibold text-[#d7e8fa] hover:text-white"><RotateCcw className="h-3 w-3" /> New image</button></div></div>}
                     </div>
                   </div>
                 )}
-                <input ref={inputRef} onChange={onInputChange} type="file" accept="image/avif,image/gif,image/jpeg,image/png,image/webp" className="hidden" />
+                <input ref={inputRef} onChange={onInputChange} type="file" accept="image/*,.heic,.heif" className="hidden" />
               </div>
             </div>
           </div>
@@ -205,12 +225,12 @@ export default function Home() {
 
         <section id="how" className="bg-[#f2f7fa] py-24 sm:py-30"><div className="container"><div className="mx-auto max-w-2xl text-center"><p className="eyebrow text-[#3a72a6]">How it works</p><h2 className="display-font mt-4 text-4xl font-medium tracking-[-0.055em] text-[#102a43] sm:text-5xl">A shareable image link in three steps</h2><p className="mt-5 text-lg leading-7 text-[#61778d]">Upload the image, generate its secure delivery URL, and copy it anywhere you need.</p></div><div className="mt-14 grid gap-6 md:grid-cols-3">{[["01", Upload, "Add your image", "Upload or drag an image file into the tool."], ["02", Link2, "Generate your link", "We create a clean direct URL for your uploaded file."], ["03", Copy, "Copy and share", "Use the image link in messages, websites, emails, and more."]].map(([number, Icon, title, text]) => { const StepIcon = Icon as typeof Upload; return <article key={number as string} className="hover-lift rounded-2xl border border-[#dce8f1] bg-white p-8 shadow-[0_12px_30px_rgba(31,76,111,0.06)]"><span className="display-font text-sm font-extrabold tracking-[0.1em] text-[#66a47f]">{number as string}</span><div className="mt-7 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eaf3fb] text-[#377ab9]"><StepIcon className="h-6 w-6" /></div><h3 className="display-font mt-6 text-2xl font-bold tracking-[-0.04em] text-[#163451]">{title as string}</h3><p className="mt-3 text-base leading-7 text-[#62788e]">{text as string}</p></article>; })}</div></div></section>
 
-        <section id="developers" className="bg-[#071f34] py-24 text-white"><div className="container grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]"><div><p className="eyebrow text-[#97f65e]">Beyond standard image links</p><h2 className="display-font mt-4 text-4xl font-medium tracking-[-0.055em] sm:text-5xl">A workflow that scales with your work</h2><p className="mt-6 max-w-xl text-lg leading-8 text-[#bad1e5]">The interface stays simple for a single upload, while the delivery model makes sense for developer-led visual workflows too.</p><a href="#tool" className="mt-8 inline-flex items-center rounded-full bg-[#97f65e] px-5 py-3 text-sm font-extrabold text-[#153820] transition hover:bg-[#b1fb83]">Create a link now <ArrowRight className="ml-2 h-4 w-4" /></a></div><div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b2b46] shadow-2xl"><div className="flex items-center justify-between border-b border-white/10 px-5 py-4"><div className="flex gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#ff6e77]" /><span className="h-2.5 w-2.5 rounded-full bg-[#f0c45e]" /><span className="h-2.5 w-2.5 rounded-full bg-[#97f65e]" /></div><span className="text-xs font-semibold text-[#bad4e6]">linkforge.config</span><Code2 className="h-4 w-4 text-[#8eeef2]" /></div><pre className="overflow-x-auto p-6 font-mono text-sm leading-7 text-[#d9eaf9]"><code><span className="text-[#97f65e]">const</span> shareLink = <span className="text-[#8eeef2]">await</span> linkforge.images.<span className="text-[#f6cd77]">upload</span>({'\n'}  {'{'} file: <span className="text-[#ff9fab]">&quot;product-image.webp&quot;</span> {'}'}{'\n'});{'\n\n'}console.<span className="text-[#f6cd77]">log</span>(shareLink.url);{'\n'}<span className="text-[#5f849f]">// https://your-domain/manus-storage/...</span></code></pre></div></div></section>
+        <section id="developers" className="bg-[#071f34] py-24 text-white"><div className="container grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]"><div><p className="eyebrow text-[#97f65e]">Beyond standard image links</p><h2 className="display-font mt-4 text-4xl font-medium tracking-[-0.055em] sm:text-5xl">A workflow that scales with your work</h2><p className="mt-6 max-w-xl text-lg leading-8 text-[#bad1e5]">The interface stays simple for a single upload, while the delivery model makes sense for developer-led visual workflows too.</p><a href="#tool" className="mt-8 inline-flex items-center rounded-full bg-[#97f65e] px-5 py-3 text-sm font-extrabold text-[#153820] transition hover:bg-[#b1fb83]">Create a link now <ArrowRight className="ml-2 h-4 w-4" /></a></div><div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b2b46] shadow-2xl"><div className="flex items-center justify-between border-b border-white/10 px-5 py-4"><div className="flex gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#ff6e77]" /><span className="h-2.5 w-2.5 rounded-full bg-[#f0c45e]" /><span className="h-2.5 w-2.5 rounded-full bg-[#97f65e]" /></div><span className="text-xs font-semibold text-[#bad4e6]">linkforge.config</span><Code2 className="h-4 w-4 text-[#8eeef2]" /></div><pre className="overflow-x-auto p-6 font-mono text-sm leading-7 text-[#d9eaf9]"><code><span className="text-[#97f65e]">const</span> shareLink = <span className="text-[#8eeef2]">await</span> linkforge.images.<span className="text-[#f6cd77]">upload</span>({'\n'}  {'{'} file: <span className="text-[#ff9fab]">&quot;product-image.webp&quot;</span> {'}'}{'\n'});{'\n\n'}console.<span className="text-[#f6cd77]">log</span>(shareLink.url);{'\n'}<span className="text-[#5f849f]">// https://your-domain/i/your-image-id</span></code></pre></div></div></section>
 
         <section id="faq" className="bg-white py-24 sm:py-30"><div className="container max-w-4xl"><div className="text-center"><p className="eyebrow text-[#3a72a6]">FAQ</p><h2 className="display-font mt-4 text-4xl font-medium tracking-[-0.055em] text-[#102a43] sm:text-5xl">Frequently asked questions</h2></div><div className="mt-12 divide-y divide-[#dbe7f0] border-y border-[#dbe7f0]">{faqs.map(([question, answer]) => <details key={question} className="group py-5"><summary className="flex list-none items-center justify-between gap-6 text-left text-lg font-bold text-[#153451] marker:content-none"><span>{question}</span><ChevronDown className="h-5 w-5 shrink-0 text-[#4b85bb] transition group-open:rotate-180" /></summary><p className="max-w-3xl pt-3 pr-10 text-[16px] leading-7 text-[#647b91]">{answer}</p></details>)}</div></div></section>
       </main>
 
-      <footer className="bg-[#061b2e] pb-8 pt-16 text-[#bdd2e4]"><div className="container"><div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.25fr_repeat(4,1fr)]"><div><div className="flex items-center gap-2.5 text-white"><img src="/manus-storage/linkforge-mark_f24f4787.png" alt="" className="h-8 w-8 object-contain" /><span className="display-font text-xl font-extrabold tracking-[-0.04em]">LinkForge</span></div><p className="mt-4 max-w-xs text-sm leading-6">A clean, browser-first utility for creating and sharing image links.</p></div>{[["Platform", "Image", "Video", "Performance", "Pricing"], ["Solutions", "E-commerce", "Retail", "Media", "Travel"], ["Developers", "Image API", "Documentation", "SDKs", "Tools"], ["Company", "About", "Careers", "Contact", "Trust"]].map(([heading, ...links]) => <div key={heading}><h3 className="display-font text-sm font-bold text-white">{heading}</h3><ul className="mt-4 space-y-2.5 text-sm">{links.map(link => <li key={link}><a href="#top" className="transition hover:text-[#97f65e]">{link}</a></li>)}</ul></div>)}</div><div className="mt-14 flex flex-col gap-3 border-t border-white/10 pt-7 text-xs text-[#8ba9c0] sm:flex-row sm:items-center sm:justify-between"><p>© 2026 LinkForge. Built for simple image sharing.</p><div className="flex gap-5"><a href="#top" className="hover:text-white">Terms</a><a href="#top" className="hover:text-white">Privacy</a><a href="#top" className="hover:text-white">Support</a></div><p>صنع من قبل نور</p></div></div></footer>
+      <footer className="bg-[#061b2e] pb-8 pt-16 text-[#bdd2e4]"><div className="container"><div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.25fr_repeat(4,1fr)]"><div><div className="flex items-center gap-2.5 text-white"><img src="/manus-storage/linkforge-mark_f24f4787.png" alt="" className="h-8 w-8 object-contain" /><span className="display-font text-xl font-extrabold tracking-[-0.04em]">LinkForge</span></div><p className="mt-4 max-w-xs text-sm leading-6">A clean, browser-first utility for creating and sharing image links.</p></div>{[["Platform", "Image", "Video", "Performance", "Pricing"], ["Solutions", "E-commerce", "Retail", "Media", "Travel"], ["Developers", "Image API", "Documentation", "SDKs", "Tools"], ["Company", "About", "Careers", "Contact", "Trust"]].map(([heading, ...links]) => <div key={heading}><h3 className="display-font text-sm font-bold text-white">{heading}</h3><ul className="mt-4 space-y-2.5 text-sm">{links.map(link => <li key={link}><a href="#top" className="transition hover:text-[#97f65e]">{link}</a></li>)}</ul></div>)}</div><div className="mt-14 flex flex-col gap-3 border-t border-white/10 pt-7 text-xs text-[#8ba9c0] sm:flex-row sm:items-center sm:justify-between"><p>© 2026 @pro_hg_i. All rights reserved.</p><div className="flex gap-5"><a href="https://instagram.com/pro_hg_i" target="_blank" rel="noreferrer" className="hover:text-white">Instagram @pro_hg_i</a><a href="mailto:bydnottesla@gmail.com" className="hover:text-white">Contact</a></div><p>Developed by Yazin · bydnottesla@gmail.com</p></div></div></footer>
     </div>
   );
 }
