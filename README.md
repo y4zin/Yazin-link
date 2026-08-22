@@ -10,4 +10,4 @@ This repository is public so its development history can be viewed and GitHub Pa
 
 ## Deployment architecture
 
-GitHub Pages can host the static user interface at `https://y4zin.github.io/Yazin-link/`. It cannot itself sign image uploads. This project uses ImageKit for the public image URLs and a small signing API, with a complete Worker template and setup guide in [GITHUB_PAGES_IMAGEKIT_SETUP.md](./GITHUB_PAGES_IMAGEKIT_SETUP.md).
+The static interface is published on GitHub Pages at `https://y4zin.github.io/Yazin-link/`. GitHub Pages cannot itself sign image uploads. This project uses ImageKit for the public image URLs and a small signing API, with a complete Worker template and setup guide in [GITHUB_PAGES_IMAGEKIT_SETUP.md](./GITHUB_PAGES_IMAGEKIT_SETUP.md). The local recent-links view is available at `https://y4zin.github.io/Yazin-link/#/my-links`.

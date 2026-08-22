@@ -26,12 +26,16 @@ ImageKit يتطلب توقيعًا قصير المدة عند الرفع. الم
 4. انشر العامل يدويًا، ثم انسخ عنوانه مثل `https://yazin-link-image-auth.<your-subdomain>.workers.dev`.
 5. عند بناء واجهة GitHub Pages، عيّن `VITE_IMAGEKIT_AUTH_URL` إلى عنوان Worker. لا تضع أي مفتاح ImageKit في GitHub.
 
-## إعداد GitHub Pages يدويًا
+## حالة نشر GitHub Pages
 
-بعد إعداد Worker، افتح Settings → Pages واختر **GitHub Actions** كمصدر النشر. يحتوي المستودع على سير عمل يدوي باسم `Deploy Yazin-link to GitHub Pages`. من تبويب Actions شغّله يدويًا. عنوان عامل التوقيع العام موجود في سير العمل فقط؛ لا توجد مفاتيح ImageKit في GitHub أو في ملفات الواجهة.
+تم إعداد GitHub Pages بمصدر **GitHub Actions** وتشغيل سير العمل اليدوي `Deploy Yazin-link to GitHub Pages` بنجاح. عنوان عامل التوقيع العام موجود في سير العمل فقط؛ لا توجد مفاتيح ImageKit في GitHub أو في ملفات الواجهة.
 
-رابط الموقع سيكون:
+رابط الموقع المنشور هو:
 
 `https://y4zin.github.io/Yazin-link/`
 
-عند فتح الموقع على GitHub Pages، يستخدم المسارات الهاشية مثل `#/my-links` حتى تعمل صفحة آخر الروابط دون إعداد إعادة توجيه في الخادم.
+تعمل صفحة آخر الروابط على:
+
+`https://y4zin.github.io/Yazin-link/#/my-links`
+
+تستخدم الواجهة المسارات الهاشية حتى تعمل صفحة آخر الروابط دون إعداد إعادة توجيه في الخادم.
