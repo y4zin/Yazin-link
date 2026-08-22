@@ -48,6 +48,13 @@ export function removeLocalLink(publicId: string, storage?: StorageLike) {
   return next;
 }
 
+export function renameLocalLink(publicId: string, filename: string, storage?: StorageLike) {
+  const normalizedName = filename.trim().slice(0, 120);
+  const next = readLocalLinks(storage).map(link => link.publicId === publicId && normalizedName ? { ...link, filename: normalizedName } : link);
+  writeLocalLinks(next, storage);
+  return next;
+}
+
 export function linkFromUrl(url: string): LocalImageLink | null {
   try {
     const parsed = new URL(url.trim());
