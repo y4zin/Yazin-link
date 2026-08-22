@@ -1,0 +1,8 @@
+name = "yazin-link-image-auth"
+main = "imagekit-auth-worker.js"
+compatibility_date = "2026-08-22"
+
+# Set these values as secrets, never in this file:
+# wrangler secret put IMAGEKIT_PRIVATE_KEY
+# wrangler secret put IMAGEKIT_PUBLIC_KEY
+# wrangler secret put ALLOWED_ORIGIN

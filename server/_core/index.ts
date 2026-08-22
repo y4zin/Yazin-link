@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getImageLinkByPublicId } from "../db";
 import { storageGetSignedUrl } from "../storage";
+import { createImageKitUploadAuth } from "../imagekit";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +37,29 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.options("/api/imagekit-auth", (req, res) => {
+    const origin = req.get("origin");
+    if (origin === "https://y4zin.github.io") {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.status(204).end();
+  });
+  app.get("/api/imagekit-auth", (req, res) => {
+    try {
+      const origin = req.get("origin");
+      if (origin === "https://y4zin.github.io") {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Vary", "Origin");
+      }
+      res.setHeader("Cache-Control", "no-store");
+      res.status(200).json(createImageKitUploadAuth());
+    } catch (error) {
+      console.error("[ImageKit] Failed to create upload authorization:", error);
+      res.status(503).json({ message: "Image upload is not configured." });
+    }
+  });
   app.get("/i/:publicId", async (req, res) => {
     try {
       const image = await getImageLinkByPublicId(req.params.publicId);

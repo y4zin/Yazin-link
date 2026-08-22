@@ -151,8 +151,10 @@ function vitePluginManusDebugCollector(): Plugin {
 }
 
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const githubPagesBuild = process.env.GITHUB_PAGES === "true";
 
 export default defineConfig({
+  base: githubPagesBuild ? "/Yazin-link/" : "/",
   plugins,
   resolve: {
     alias: {
