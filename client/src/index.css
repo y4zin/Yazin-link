@@ -6,85 +6,49 @@
 @theme inline {
   --font-sans: "Source Sans 3", Arial, sans-serif;
   --font-display: "Manrope", Arial, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
   --color-ring: var(--ring);
 }
 
-:root {
-  --radius: 0.85rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.215 0.026 248);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.215 0.026 248);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.215 0.026 248);
-  --primary: oklch(0.502 0.168 259);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.955 0.012 250);
-  --secondary-foreground: oklch(0.31 0.04 252);
-  --muted: oklch(0.96 0.009 245);
-  --muted-foreground: oklch(0.49 0.035 250);
-  --accent: oklch(0.92 0.08 136);
-  --accent-foreground: oklch(0.25 0.07 142);
-  --destructive: oklch(0.6 0.22 27);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.89 0.018 246);
-  --input: oklch(0.9 0.018 246);
-  --ring: oklch(0.75 0.16 142);
-}
+:root { --background: oklch(0.17 0 0); --foreground: oklch(0.97 0 0); --card: oklch(0.2 0 0); --card-foreground: oklch(0.97 0 0); --primary: oklch(0.92 0.07 151); --primary-foreground: oklch(0.18 0.02 151); --border: oklch(0.32 0 0); --ring: oklch(0.82 0.08 151); }
 
 @layer base {
   * { @apply border-border outline-ring/60; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; background: #121212; }
   body { @apply bg-background text-foreground font-sans antialiased; }
   button, a { -webkit-tap-highlight-color: transparent; }
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]), a[href] { @apply cursor-pointer; }
 }
 
 @layer components {
-  .container { width: 100%; margin-inline: auto; padding-inline: 1rem; }
+  .container { width: 100%; margin-inline: auto; padding-inline: 1.25rem; }
   .display-font { font-family: var(--font-display); }
-  .hero-arc {
-    background-image: linear-gradient(105deg, rgba(4, 51, 84, 0.92), rgba(3, 29, 48, 0.96) 56%, rgba(2, 23, 40, 0.97)), url("/manus-storage/linkforge-hero_a967d0cb.png");
-    background-position: center;
-    background-size: cover;
-  }
-  .hero-grid {
-    background-image: linear-gradient(rgba(151, 246, 94, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(151, 246, 94, 0.06) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: linear-gradient(to bottom, black, transparent 88%);
-  }
-  .tool-card-shadow { box-shadow: 0 28px 80px rgba(2, 17, 31, 0.28), 0 1px 0 rgba(255,255,255,0.14) inset; }
-  .upload-dash { border: 1px dashed rgba(191, 222, 255, 0.42); }
-  .eyebrow { font-family: var(--font-display); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase; }
+  .brand-word { font-family: var(--font-display); letter-spacing: -0.075em; }
+  .brand-word b { font-weight: 800; }
+  .brand-word i { color: #ffa8b7; font-style: normal; font-weight: 500; }
+  .eyebrow { font-family: var(--font-display); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; }
+  .ribbon { position: absolute; right: -22vw; width: 132vw; height: 118px; border-radius: 999px 0 0 999px; opacity: .95; transform: rotate(-8deg); }
+  .ribbon::after { content: ""; position: absolute; inset: 16px 0 16px 17%; border-radius: inherit; background: #121212; }
+  .ribbon-white { top: 19.5rem; background: #f7f6ef; }
+  .ribbon-pink { top: 26rem; background: #ffa8b7; }
+  .ribbon-mint { top: 32.5rem; background: #a8f2c3; }
+  .yazin-panel { position: relative; overflow: hidden; }
+  .yazin-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.06), transparent 28%, transparent 70%, rgba(168,242,195,.08)); }
+  .upload-stage { border: 1px dashed rgba(247,246,239,.32); transition: border-color 180ms cubic-bezier(.23,1,.32,1), background-color 180ms cubic-bezier(.23,1,.32,1), transform 180ms cubic-bezier(.23,1,.32,1); }
+  .upload-stage:hover { background: rgba(255,255,255,.035); border-color: rgba(168,242,195,.75); }
+  .upload-stage.is-dragging { background: rgba(168,242,195,.10); border-color: #a8f2c3; transform: scale(.99); }
+  .section-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(247,246,239,.32), transparent); }
+  .step-card { transition: transform 180ms cubic-bezier(.23,1,.32,1), border-color 180ms cubic-bezier(.23,1,.32,1), background-color 180ms cubic-bezier(.23,1,.32,1); }
+  .step-card:hover { transform: translateY(-3px); border-color: rgba(168,242,195,.5); background: rgba(255,255,255,.065); }
 }
 
-@media (min-width: 640px) { .container { padding-inline: 1.5rem; } }
-@media (min-width: 1024px) { .container { max-width: 1280px; padding-inline: 2rem; } }
-
-@media (prefers-reduced-motion: no-preference) {
-  .tool-card-shadow, .upload-motion, .hover-lift { transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms cubic-bezier(0.23, 1, 0.32, 1), background-color 180ms cubic-bezier(0.23, 1, 0.32, 1); }
-  .hover-lift:hover { transform: translateY(-3px); }
-  .upload-motion:active, button:active { transform: scale(0.975); }
-}
+@media (min-width: 640px) { .container { padding-inline: 2rem; } }
+@media (min-width: 1024px) { .container { max-width: 1180px; } .ribbon { right: -15vw; width: 110vw; } }
+@media (max-width: 639px) { .ribbon { display: none; } }
+@media (prefers-reduced-motion: no-preference) { button:active { transform: scale(.975); } }
