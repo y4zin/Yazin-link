@@ -28,9 +28,7 @@ ImageKit يتطلب توقيعًا قصير المدة عند الرفع. الم
 
 ## إعداد GitHub Pages يدويًا
 
-بعد إعداد Worker، افتح المستودع ثم Settings → Secrets and variables → Actions. أضف سرًا باسم `VITE_IMAGEKIT_AUTH_URL` وقيمته عنوان Worker فقط، مثل `https://yazin-link-image-auth.<your-subdomain>.workers.dev`.
-
-بعد ذلك افتح Settings → Pages واختر **GitHub Actions** كمصدر النشر. يحتوي المستودع على سير عمل يدوي باسم `Deploy Yazin-link to GitHub Pages`. من تبويب Actions شغّله يدويًا بعد إدخال السر. لا توجد مفاتيح ImageKit في GitHub أو في ملفات الواجهة.
+بعد إعداد Worker، افتح Settings → Pages واختر **GitHub Actions** كمصدر النشر. يحتوي المستودع على سير عمل يدوي باسم `Deploy Yazin-link to GitHub Pages`. من تبويب Actions شغّله يدويًا. عنوان عامل التوقيع العام موجود في سير العمل فقط؛ لا توجد مفاتيح ImageKit في GitHub أو في ملفات الواجهة.
 
 رابط الموقع سيكون:
 

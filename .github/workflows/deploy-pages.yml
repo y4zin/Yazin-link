@@ -16,7 +16,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      VITE_IMAGEKIT_AUTH_URL: ${{ secrets.VITE_IMAGEKIT_AUTH_URL }}
+      # عنوان عامل التوقيع عام؛ مفاتيح ImageKit تبقى داخل أسرار Cloudflare فقط.
+      VITE_IMAGEKIT_AUTH_URL: https://yazin-link-image-auth.goelmiller12.workers.dev
     steps:
       - name: Checkout
         uses: actions/checkout@v4
