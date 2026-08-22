@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Check, Copy, ImagePlus, LayoutList, Link2, RotateCcw, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import { toast } from "sonner";
+import { Link } from "wouter";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/avif", "image/gif", "image/heic", "image/heif", "image/jpeg", "image/png", "image/webp"];
@@ -78,10 +79,10 @@ export default function Home() {
   const copyLink = async () => { if (!shareUrl) return; try { await navigator.clipboard.writeText(shareUrl); setCopied(true); toast.success("تم نسخ الرابط."); window.setTimeout(() => setCopied(false), 1600); } catch { toast.error("لم يتم النسخ تلقائيًا؛ انسخ الرابط يدويًا."); } };
   const progressLabel = selected?.status === "preparing" ? "يجري تجهيز الصورة بأمان…" : uploadImage.isPending ? "يجري رفع الصورة وإنشاء الرابط…" : progress === 100 ? "اكتمل إنشاء الرابط" : "";
 
-  return <div className="min-h-screen overflow-hidden bg-[#121212] text-white">
+  return <div className="page-enter min-h-screen overflow-hidden bg-[#121212] text-white">
     <main id="top" className="relative isolate"><div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"><div className="ribbon ribbon-white" /><div className="ribbon ribbon-pink" /><div className="ribbon ribbon-mint" /><div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_2%,rgba(255,255,255,0.07),transparent_29%),radial-gradient(circle_at_100%_42%,rgba(255,175,187,0.08),transparent_24%)]" /></div>
       <section className="container relative py-7 sm:py-10 lg:py-14"><div className="mx-auto flex max-w-5xl flex-col items-center text-center">
-        <div className="flex items-center gap-5"><a href="#top" aria-label="Yazin-link" className="brand-lockup inline-flex items-center gap-2.5"><span className="brand-word text-left text-[25px] leading-none text-white"><b>Yazin</b><i>-link</i></span><img src="/manus-storage/yazin-link-lion-mark_85403e51.png" alt="شعار أسد Yazin-link" className="brand-mark h-10 w-10 object-contain" /></a><a href="/my-links" className="my-links-shortcut inline-flex items-center gap-2 text-sm font-black text-white/70 hover:text-[#a8f2c3]"><LayoutList className="h-4 w-4" />روابطي</a></div>
+        <div className="flex items-center gap-5"><a href="#top" aria-label="Yazin-link" className="brand-lockup inline-flex items-center gap-2.5"><span className="brand-word text-left text-[25px] leading-none text-white"><b>Yazin</b><i>-link</i></span><img src="/manus-storage/yazin-link-lion-mark_85403e51.png" alt="شعار أسد Yazin-link" className="brand-mark h-10 w-10 object-contain" /></a><Link href="/my-links" className="my-links-shortcut inline-flex items-center gap-2 text-sm font-black text-white/70 hover:text-[#a8f2c3]"><LayoutList className="h-4 w-4" />روابطي</Link></div>
         <p className="eyebrow mt-11 text-[#a8f2c3]">ارفع. أنشئ. شارك.</p><h1 className="display-font mt-4 max-w-4xl text-5xl font-semibold leading-[0.98] tracking-[-0.065em] text-white sm:text-7xl lg:text-[82px]">رابط صورتك<br /><span className="text-[#ffa8b7]">بأسلوب يلفت النظر.</span></h1><p className="mt-6 max-w-2xl text-base leading-7 text-white/68 sm:text-lg">Yazin-link يمنحك رابطًا مباشرًا لصورتك في خطوات بسيطة، مع تجهيز آمن للصورة من الهاتف قبل إنشاء الرابط.</p>
       </div>
       <div id="tool" className="yazin-panel mx-auto mt-12 max-w-5xl rounded-[30px] border border-white/15 bg-[#181818]/90 p-4 shadow-[0_26px_90px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:p-7"><div className="rounded-[22px] border border-white/10 bg-white/[0.035] p-4 sm:p-7" onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setDragging(false)} onDrop={onDrop}>

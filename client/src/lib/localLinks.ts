@@ -59,3 +59,15 @@ export function linkFromUrl(url: string): LocalImageLink | null {
     return null;
   }
 }
+
+export function verifyImageUrl(url: string) {
+  return new Promise<void>((resolve, reject) => {
+    if (typeof Image === "undefined") { reject(new Error("معاينة الصور غير متاحة في هذه البيئة.")); return; }
+    const image = new Image();
+    const timer = globalThis.setTimeout(() => reject(new Error("انتهت مهلة تحميل معاينة الصورة.")), 12_000);
+    const cleanup = () => globalThis.clearTimeout(timer);
+    image.onload = () => { cleanup(); image.naturalWidth > 0 ? resolve() : reject(new Error("الرابط لا يقدّم صورة صالحة.")); };
+    image.onerror = () => { cleanup(); reject(new Error("الرابط لا يقدّم صورة مباشرة أو لا يمكن الوصول إليها.")); };
+    image.src = url;
+  });
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { linkFromUrl, readLocalLinks, removeLocalLink, saveLocalLink } from "./localLinks";
+import { linkFromUrl, readLocalLinks, removeLocalLink, saveLocalLink, verifyImageUrl } from "./localLinks";
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -26,5 +26,31 @@ describe("local image links", () => {
   it("extracts a previous direct-image URL for local saving", () => {
     expect(linkFromUrl("https://example.test/i/abc12345")?.publicId).toBe("abc12345");
     expect(linkFromUrl("not a url")).toBeNull();
+  });
+
+  it("accepts a URL only when the browser can load an actual image", async () => {
+    class SuccessfulImage {
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+      naturalWidth = 100;
+      set src(_value: string) { queueMicrotask(() => this.onload?.()); }
+    }
+    const originalImage = globalThis.Image;
+    Object.defineProperty(globalThis, "Image", { configurable: true, value: SuccessfulImage });
+    await expect(verifyImageUrl("https://example.test/image.jpg")).resolves.toBeUndefined();
+    Object.defineProperty(globalThis, "Image", { configurable: true, value: originalImage });
+  });
+
+  it("rejects a non-image URL before it can be saved", async () => {
+    class BrokenImage {
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+      naturalWidth = 0;
+      set src(_value: string) { queueMicrotask(() => this.onerror?.()); }
+    }
+    const originalImage = globalThis.Image;
+    Object.defineProperty(globalThis, "Image", { configurable: true, value: BrokenImage });
+    await expect(verifyImageUrl("https://example.test/not-an-image")).rejects.toThrow("مباشرة");
+    Object.defineProperty(globalThis, "Image", { configurable: true, value: originalImage });
   });
 });
