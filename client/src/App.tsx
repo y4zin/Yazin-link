@@ -5,6 +5,7 @@ import { Route, Router as WouterRouter, Switch } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import Files from "./pages/Files";
 import Home from "./pages/Home";
 import MyLinks from "./pages/MyLinks";
 
@@ -15,6 +16,7 @@ function Router() {
     <WouterRouter hook={isGitHubPagesBuild ? useHashLocation : undefined}>
       <Switch>
         <Route path={"/"} component={Home} />
+        <Route path={"/files"} component={Files} />
         <Route path={"/my-links"} component={MyLinks} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
